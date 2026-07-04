@@ -23,3 +23,10 @@ it("does not accumulate or advance simulation time while paused", () => {
   runtime.advance(0.05);
   expect(runtime.state.tick).toBe(2);
 });
+
+it("advances twice as many fixed ticks at double speed", () => {
+  const runtime = new FixedStepRuntime(createGame(9));
+  runtime.setSpeed(2);
+  runtime.advance(0.05);
+  expect(runtime.state.tick).toBe(2);
+});

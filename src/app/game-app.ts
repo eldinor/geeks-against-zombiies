@@ -15,6 +15,7 @@ export class GameApp {
   private feedback: { text: string; until: number } | null = null;
   private sequence = 0;
   private paused = false;
+  private doubledSpeed = false;
   private awaitingStart = true;
   private scene?: GameScene;
   private graph?: FlowGraphCoordinator;
@@ -52,6 +53,7 @@ export class GameApp {
       if (button?.dataset.geek) this.selectGeek(button.dataset.geek as GeekKind);
     });
     on(this.view.pauseButton, "click", () => this.togglePause());
+    on(this.view.speedButton, "click", () => this.toggleSpeed());
     on(this.view.helpButton, "click", () => this.view.showHelp(true));
     on(this.view.closeHelpButton, "click", () => this.view.showHelp(false));
     on(this.view.restartButton, "click", () => this.restart());
@@ -137,19 +139,29 @@ export class GameApp {
     else this.scene?.engine.runRenderLoop(this.renderFrame);
     this.publish();
   }
+  private toggleSpeed(): void {
+    if (this.awaitingStart) return;
+    this.doubledSpeed = !this.doubledSpeed;
+    this.runtime.setSpeed(this.doubledSpeed ? 2 : 1);
+    this.publish();
+  }
   private beginGame(): void {
     if (!this.awaitingStart) return;
     this.awaitingStart = false;
     this.runtime.setPaused(false);
+    this.runtime.setSpeed(1);
+    this.scene?.setNetworkEffect("off");
     this.view.showStart(false);
     this.publish();
   }
   restart(seed = 0xc0ffee): void {
     this.runtime.state = createGame(seed);
     this.runtime.setPaused(false);
+    this.runtime.setSpeed(1);
     if (this.paused) this.scene?.engine.runRenderLoop(this.renderFrame);
     this.sequence = 0;
     this.paused = false;
+    this.doubledSpeed = false;
     this.movingId = null;
     this.hoverCell = null;
     this.hoveredEntityId = null;
@@ -172,11 +184,19 @@ export class GameApp {
       this.movingId = null;
     if (this.feedback && this.runtime.state.tick >= this.feedback.until) this.feedback = null;
     this.scene.reconcile(this.runtime.state);
+    this.scene.setNetworkEffect(
+      this.awaitingStart || this.runtime.state.status === "won"
+        ? "secure"
+        : this.runtime.state.status === "lost"
+          ? "breach"
+          : "off",
+    );
     this.scene.setInteraction(this.runtime.state, this.selected, this.hoverCell, this.hoveredEntityId, this.movingId);
     this.view.render(
       this.runtime.state,
       this.selected,
       this.paused,
+      this.doubledSpeed,
       this.feedback?.text ?? null,
       this.movingId !== null,
     );

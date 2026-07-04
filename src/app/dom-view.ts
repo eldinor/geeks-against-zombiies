@@ -12,6 +12,7 @@ export class DomView {
   readonly stage = required<HTMLElement>("#stage");
   readonly deck = required<HTMLElement>("#deck");
   readonly pauseButton = required<HTMLButtonElement>("#pause");
+  readonly speedButton = required<HTMLButtonElement>("#speed");
   readonly helpButton = required<HTMLButtonElement>("#help");
   readonly dialog = required<HTMLElement>("#dialog");
   readonly startDialog = required<HTMLElement>("#start-dialog");
@@ -26,7 +27,14 @@ export class DomView {
   private readonly message = required<HTMLElement>("#message");
   private readonly messageText = required<HTMLElement>("#message-text");
   private readonly feedback = required<HTMLElement>("#feedback");
-  render(state: GameState, selected: GeekKind | null, paused: boolean, feedback: string | null, moving: boolean): void {
+  render(
+    state: GameState,
+    selected: GeekKind | null,
+    paused: boolean,
+    doubledSpeed: boolean,
+    feedback: string | null,
+    moving: boolean,
+  ): void {
     const nextSpawn = WAVES[state.waveIndex];
     const ticksUntilWave = nextSpawn ? Math.max(0, nextSpawn.tick - state.tick) : null;
     this.energy.textContent = String(state.energy);
@@ -36,6 +44,10 @@ export class DomView {
     this.remaining.textContent = String(state.zombies.length + WAVES.length - state.waveIndex);
     this.pauseButton.textContent = paused ? "Resume" : "Pause";
     this.pauseButton.setAttribute("aria-pressed", String(paused));
+    this.speedButton.textContent = doubledSpeed ? "1x" : "2x";
+    this.speedButton.setAttribute("aria-pressed", String(doubledSpeed));
+    this.speedButton.setAttribute("aria-label", doubledSpeed ? "Return to normal speed" : "Run at double speed");
+    this.speedButton.disabled = state.status !== "playing";
     this.deck.querySelectorAll<HTMLButtonElement>("[data-geek]").forEach((button) => {
       const kind = button.dataset.geek as GeekKind;
       button.setAttribute("aria-pressed", String(kind === selected));
@@ -62,6 +74,7 @@ export class DomView {
   showStart(show: boolean): void {
     this.startDialog.hidden = !show;
     this.pauseButton.disabled = show;
+    this.speedButton.disabled = show;
     this.helpButton.disabled = show;
     this.canvas.tabIndex = show ? -1 : 0;
     this.deck.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {

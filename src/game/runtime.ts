@@ -5,6 +5,7 @@ export class FixedStepRuntime {
   readonly secondsPerTick = 1 / 20;
   private accumulator = 0;
   private paused = false;
+  private speed = 1;
   private readonly commands: GameCommand[] = [];
   constructor(public state: GameState) {}
   queue(command: GameCommand): void {
@@ -13,9 +14,12 @@ export class FixedStepRuntime {
   setPaused(paused: boolean): void {
     this.paused = paused;
   }
+  setSpeed(speed: 1 | 2): void {
+    this.speed = speed;
+  }
   advance(deltaSeconds: number): number {
     if (this.paused) return 0;
-    this.accumulator += Math.min(Math.max(deltaSeconds, 0), 0.25);
+    this.accumulator += Math.min(Math.max(deltaSeconds, 0), 0.25) * this.speed;
     let count = 0;
     while (this.accumulator >= this.secondsPerTick && count < 5) {
       const tick = this.state.tick + 1;
